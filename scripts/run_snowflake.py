@@ -15,7 +15,7 @@ try:
     cur.execute("USE SCHEMA MY_SCHEMA;")
 
     # Call your Iceberg PARQUET procedure
-    cur.execute("CALL CREATE_ALL_ICEBERG_TABLES_PARQUET();")
+    cur.execute("CALL CREATE_ALL_ICEBERG_TABLES();")
 
     print("Successfully executed Iceberg PARQUET build.")
 finally:
