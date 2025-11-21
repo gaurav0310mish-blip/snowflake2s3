@@ -1,0 +1,47 @@
+name: Git → S3 → Snowflake Iceberg PARQUET
+
+on:
+  push:
+    branches:
+      - main     # or your branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ---------------------------
+      # 1. Sync Repo → S3
+      # ---------------------------
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Sync repo to S3
+        run: |
+          aws s3 sync . s3://snowflakes-iceberg-bucket/git-data/ \
+            --exclude ".git/*" \
+            --exclude ".github/*"
+
+      # ---------------------------
+      # 2. Run Snowflake Procedure
+      # ---------------------------
+      - name: Install Snowflake connector
+        run: |
+          python3 -m pip install snowflake-connector-python
+
+      - name: Run Snowflake Iceberg PARQUET procedure
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+        run: |
+          python3 .github/scripts/run_snowflake.py
